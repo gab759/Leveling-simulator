@@ -1,99 +1,96 @@
 using UnityEngine;
 using TMPro;
-using DG.Tweening;
 
 public class WaterFillController : MonoBehaviour
 {
-    public Material waterMaterial;
-    public float maxFillSpeed = 0.2f; // Velocidad reducida de llenado/vaciado
-    private float fillAmount = -0.9f;
-    public TextMeshProUGUI percentageText;
+    public Material waterMaterial1;
+    public Material waterMaterial2;
 
-    private float currentFillSpeed = 0f;
-    private float currentDrainSpeed = 0f;
+    private float fillAmount1 = -0.9f;
+    private float fillAmount2 = -0.9f;
+    public float fillSpeed = 0.2f;
 
-    private bool upperValveOpen = false;
-    private bool lowerValveOpen = false;
+    private bool upperValve1Open = false;
+    private bool lowerValve1Open = false;
+    private bool upperValve2Open = false;
+    private bool lowerValve2Open = false;
+    private bool mainValveOpen = false;
+
+    public TextMeshProUGUI percentageText1;
+    public TextMeshProUGUI percentageText2;
 
     private void Awake()
     {
-        waterMaterial.SetFloat("_Fill", fillAmount);
-        UpdatePercentageText();
+        UpdateWaterLevels();
     }
 
-    void Update()
+    public void SetMainValve(bool open)
     {
-        // Comprobamos si ambas válvulas están abiertas
-        if (upperValveOpen && lowerValveOpen)
+        mainValveOpen = open;
+        Debug.Log("Válvula principal " + (open ? "Abierta" : "Cerrada"));
+    }
+
+    public void UpdateTankState(int tankIndex, bool isFilling, bool isOpen)
+    {
+        if (tankIndex == 1)
         {
-            Debug.Log("Ambas válvulas abiertas -> El agua NO cambia.");
+            if (isFilling)
+                upperValve1Open = isOpen;
+            else
+                lowerValve1Open = isOpen;
+        }
+        else if (tankIndex == 2)
+        {
+            if (isFilling)
+                upperValve2Open = isOpen;
+            else
+                lowerValve2Open = isOpen;
+        }
+
+        DebugValveStatus();
+    }
+
+    private void Update()
+    {
+        if (!mainValveOpen)
+        {
+            Debug.Log("Válvula principal cerrada, el agua no cambia.");
             return;
         }
 
-        // Si la válvula superior está abierta, llenar
-        if (upperValveOpen && !lowerValveOpen)
+        if (upperValve1Open && !lowerValve1Open)
         {
-            SetFillSpeed(1);
+            fillAmount1 = Mathf.Clamp(fillAmount1 + fillSpeed * Time.deltaTime, -0.9f, 0.9f);
         }
-        else
+        else if (lowerValve1Open && !upperValve1Open)
         {
-            SetFillSpeed(0);
-        }
-
-        // Si la válvula inferior está abierta, vaciar
-        if (lowerValveOpen && !upperValveOpen)
-        {
-            SetDrainSpeed(1);
-        }
-        else
-        {
-            SetDrainSpeed(0);
+            fillAmount1 = Mathf.Clamp(fillAmount1 - fillSpeed * Time.deltaTime, -0.9f, 0.9f);
         }
 
-        // Actualizar el nivel de agua gradualmente
-        float previousFill = fillAmount;
-        fillAmount = Mathf.Clamp(fillAmount + (currentFillSpeed - currentDrainSpeed) * Time.deltaTime, -0.9f, 0.9f);
-        waterMaterial.SetFloat("_Fill", fillAmount);
-        UpdatePercentageText();
-
-        if (previousFill != fillAmount)
+        if (upperValve2Open && !lowerValve2Open)
         {
-            Debug.Log($"Nivel del agua cambiado a {fillAmount:F2}");
+            fillAmount2 = Mathf.Clamp(fillAmount2 + fillSpeed * Time.deltaTime, -0.9f, 0.9f);
         }
+        else if (lowerValve2Open && !upperValve2Open)
+        {
+            fillAmount2 = Mathf.Clamp(fillAmount2 - fillSpeed * Time.deltaTime, -0.9f, 0.9f);
+        }
+
+        UpdateWaterLevels();
     }
 
-    public void SetFillSpeed(float speed)
+    private void UpdateWaterLevels()
     {
-        currentFillSpeed = maxFillSpeed * speed;
-        Debug.Log($"Velocidad de llenado ajustada a {currentFillSpeed}");
+        waterMaterial1.SetFloat("_Fill", fillAmount1);
+        waterMaterial2.SetFloat("_Fill", fillAmount2);
+        percentageText1.text = Mathf.RoundToInt(((fillAmount1 + 0.9f) / 1.8f) * 100) + "%";
+        percentageText2.text = Mathf.RoundToInt(((fillAmount2 + 0.9f) / 1.8f) * 100) + "%";
     }
 
-    public void SetDrainSpeed(float speed)
+    private void DebugValveStatus()
     {
-        currentDrainSpeed = maxFillSpeed * speed;
-        Debug.Log($"Velocidad de vaciado ajustada a {currentDrainSpeed}");
-    }
-
-    public void CheckValves()
-    {
-        ValveHandle[] valves = FindObjectsOfType<ValveHandle>();
-        upperValveOpen = false;
-        lowerValveOpen = false;
-
-        foreach (var valve in valves)
-        {
-            if (valve.valveType == ValveHandle.ValveType.Upper)
-                upperValveOpen = valve.IsOpen();
-            else if (valve.valveType == ValveHandle.ValveType.Lower)
-                lowerValveOpen = valve.IsOpen();
-        }
-
-        Debug.Log($"Estado de válvulas -> Superior: {(upperValveOpen ? "Abierta" : "Cerrada")}, Inferior: {(lowerValveOpen ? "Abierta" : "Cerrada")}");
-    }
-
-    private void UpdatePercentageText()
-    {
-        int percentage = Mathf.RoundToInt(((fillAmount + 0.9f) / 1.8f) * 100);
-        percentageText.text = percentage + "%";
+        Debug.Log($"Estado de válvulas -> Principal: {(mainValveOpen ? "Abierta" : "Cerrada")}, " +
+                  $"Superior 1: {(upperValve1Open ? "Abierta" : "Cerrada")}, Inferior 1: {(lowerValve1Open ? "Abierta" : "Cerrada")}, " +
+                  $"Superior 2: {(upperValve2Open ? "Abierta" : "Cerrada")}, Inferior 2: {(lowerValve2Open ? "Abierta" : "Cerrada")}");
     }
 }

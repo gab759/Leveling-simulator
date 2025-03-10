@@ -3,7 +3,7 @@ using DG.Tweening;
 
 public class ValveHandle : MonoBehaviour
 {
-    public enum ValveType { Upper, Lower }
+    public enum ValveType { Upper1, Lower1, Upper2, Lower2, Main }
     public ValveType valveType;
     public WaterFillController waterController;
 
@@ -46,19 +46,6 @@ public class ValveHandle : MonoBehaviour
         transform.DORotate(new Vector3(newRotationX, transform.eulerAngles.y, transform.eulerAngles.z),
                            rotationDuration, RotateMode.FastBeyond360)
             .SetEase(Ease.Linear)
-            .OnUpdate(() =>
-            {
-                if (valveType == ValveType.Upper)
-                {
-                    waterController.SetFillSpeed(isClockwise ? 1 : 0);
-                    Debug.Log($"{valveType} está llenando el tanque.");
-                }
-                else if (valveType == ValveType.Lower)
-                {
-                    waterController.SetDrainSpeed(isClockwise ? 1 : 0);
-                    Debug.Log($"{valveType} está vaciando el tanque.");
-                }
-            })
             .OnComplete(() =>
             {
                 isRotating = false;
@@ -67,8 +54,17 @@ public class ValveHandle : MonoBehaviour
 
                 Debug.Log($"{valveType} {(isOpen ? "abierta" : "cerrada")}");
 
-                // Llamar a CheckValves() inmediatamente después de cambiar el estado
-                waterController.CheckValves();
+                // Actualizar el estado en WaterFillController
+                if (valveType == ValveType.Main)
+                {
+                    waterController.SetMainValve(isOpen);
+                }
+                else
+                {
+                    int tankIndex = (valveType == ValveType.Upper1 || valveType == ValveType.Lower1) ? 1 : 2;
+                    bool isFilling = (valveType == ValveType.Upper1 || valveType == ValveType.Upper2);
+                    waterController.UpdateTankState(tankIndex, isFilling, isOpen);
+                }
             });
     }
 
