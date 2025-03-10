@@ -52,26 +52,25 @@ public class WaterFillController : MonoBehaviour
 
     private void Update()
     {
-        if (!mainValveOpen)
+        //  El agua solo se llena si la válvula principal está abierta
+        if (mainValveOpen)
         {
-            Debug.Log("Válvula principal cerrada, el agua no cambia.");
-            return;
+            if (upperValve1Open && !lowerValve1Open)
+            {
+                fillAmount1 = Mathf.Clamp(fillAmount1 + fillSpeed * Time.deltaTime, -0.9f, 0.9f);
+            }
+            if (upperValve2Open && !lowerValve2Open)
+            {
+                fillAmount2 = Mathf.Clamp(fillAmount2 + fillSpeed * Time.deltaTime, -0.9f, 0.9f);
+            }
         }
 
-        if (upperValve1Open && !lowerValve1Open)
-        {
-            fillAmount1 = Mathf.Clamp(fillAmount1 + fillSpeed * Time.deltaTime, -0.9f, 0.9f);
-        }
-        else if (lowerValve1Open && !upperValve1Open)
+        //  El agua puede vaciarse aunque la válvula principal esté cerrada
+        if (lowerValve1Open && !upperValve1Open)
         {
             fillAmount1 = Mathf.Clamp(fillAmount1 - fillSpeed * Time.deltaTime, -0.9f, 0.9f);
         }
-
-        if (upperValve2Open && !lowerValve2Open)
-        {
-            fillAmount2 = Mathf.Clamp(fillAmount2 + fillSpeed * Time.deltaTime, -0.9f, 0.9f);
-        }
-        else if (lowerValve2Open && !upperValve2Open)
+        if (lowerValve2Open && !upperValve2Open)
         {
             fillAmount2 = Mathf.Clamp(fillAmount2 - fillSpeed * Time.deltaTime, -0.9f, 0.9f);
         }
